@@ -1,0 +1,27 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: triad_mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: triad_dms
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build: .
+    container_name: triad_dms_app
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/
+      - DATABASE_NAME=triad_dms
+      - JWT_SECRET_KEY=triad_secure_production_secret_key_2026
+    depends_on:
+      - mongodb
+
+volumes:
+  mongo_data:

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRIAD AI DMS - Intelligent Document Management System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- AUTHENTICATION OVERLAY -->
+  <div id="authOverlay" class="auth-wrapper" style="display: none;">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <h1><i class="fa-solid fa-layer-group"></i> TRIAD AI DMS</h1>
+        <p>Intelligent Document Management & RBAC Platform</p>
+      </div>
+
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
+        <div class="auth-tab" onclick="switchAuthTab('register')">Create Account</div>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="loginEmail" class="form-control" placeholder="name@triad.com" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
+        </button>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="registerForm" onsubmit="handleRegister(event)" style="display: none;">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="regName" class="form-control" placeholder="Jane Doe" required>
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="regEmail" class="form-control" placeholder="jane@triad.com" required>
+        </div>
+        <div class="form-group">
+          <label>Assign Division</label>
+          <select id="regDivision" class="form-control" required>
+            <option value="">Select Division...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Password (min 8 chars)</label>
+          <input type="password" id="regPassword" class="form-control" minlength="8" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="fa-solid fa-user-plus"></i> Create Account
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- APPLICATION SHELL -->
+  <div id="appContainer" class="app-container" style="display: none;">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon"><i class="fa-solid fa-cube"></i></div>
+        <div class="brand-title">TRIAD AI DMS</div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <a class="menu-item active" data-view="dashboard" onclick="navigateTo('dashboard')">
+          <i class="fa-solid fa-folder-open"></i>
+          <span>Document Hub</span>
+        </a>
+        <a class="menu-item" data-view="search" onclick="navigateTo('search')">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <span>Advanced Search</span>
+        </a>
+        <a class="menu-item" data-view="requests" onclick="navigateTo('requests')">
+          <i class="fa-solid fa-inbox"></i>
+          <span>Access Requests</span>
+          <span id="pendingBadge" class="menu-badge" style="display: none;">0</span>
+        </a>
+        <a class="menu-item admin-only" data-view="admin" onclick="navigateTo('admin')" style="display: none;">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Custom Metadata</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="user-avatar" id="userAvatar">U</div>
+          <div class="user-details">
+            <div class="name" id="userNameDisplay">User Name</div>
+            <div class="role-badge" id="userRoleBadge">Division</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="logout()" title="Logout">
+            <i class="fa-solid fa-power-off"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-wrapper">
+      
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-title">
+          <h2 id="pageTitle">Document Hub</h2>
+          <p id="pageSubtitle">Manage, view, and organize company documents</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" onclick="openUploadModal()">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Upload Document
+          </button>
+        </div>
+      </header>
+
+      <div class="content-body">
+        
+        <!-- ========================================== -->
+        <!-- VIEW 1: DOCUMENT HUB / DASHBOARD -->
+        <!-- ========================================== -->
+        <section id="viewDashboard" class="view-panel">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fa-solid fa-file-lines"></i></div>
+              <div class="stat-info">
+                <div class="num" id="statTotalDocs">0</div>
+                <div class="label">Accessible Documents</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#e0f2fe; color:#0284c7;"><i class="fa-solid fa-building"></i></div>
+              <div class="stat-info">
+                <div class="num" id="statMyDivision">-</div>
+                <div class="label">My Division</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#fef3c7; color:#d97706;"><i class="fa-solid fa-clock"></i></div>
+              <div class="stat-info">
+                <div class="num" id="statPendingReqs">0</div>
+                <div class="label">Pending Access Requests</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#dcfce7; color:#16a34a;"><i class="fa-solid fa-tags"></i></div>
+              <div class="stat-info">
+                <div class="num" id="statActiveMeta">0</div>
+                <div class="label">Active Custom Metadata Fields</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Document Table -->
+          <div class="card-table">
+            <div class="table-controls">
+              <div class="filter-group">
+                <input type="text" id="docSearchFilter" class="form-control search-input" placeholder="Quick filter by title..." oninput="filterDocumentsTable()">
+                <select id="divisionFilter" class="form-control" style="width: auto;" onchange="loadDocuments()">
+                  <option value="">All Divisions</option>
+                </select>
+                <select id="reportTypeFilter" class="form-control" style="width: auto;" onchange="loadDocuments()">
+                  <option value="">All Report Types</option>
+                </select>
+              </div>
+              <div>
+                <button class="btn btn-secondary btn-sm" onclick="loadDocuments()">
+                  <i class="fa-solid fa-rotate"></i> Refresh
+                </button>
+              </div>
+            </div>
+
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Division</th>
+                  <th>Dynamic Metadata</th>
+                  <th>OCR Status</th>
+                  <th>Uploaded</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="documentsTableBody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading documents...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: ADVANCED SEARCH -->
+        <!-- ========================================== -->
+        <section id="viewSearch" class="view-panel" style="display: none;">
+          <div class="card-table" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+            <form onsubmit="handleAdvancedSearch(event)">
+              <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
+                <input type="text" id="advSearchInput" class="form-control" placeholder="Search across document titles, custom metadata, and OCR-extracted text..." style="font-size: 1rem; padding: 0.85rem;" required>
+                <button type="submit" class="btn btn-primary" style="padding: 0 1.5rem;">
+                  <i class="fa-solid fa-magnifying-glass"></i> Search
+                </button>
+              </div>
+              <div class="filter-group">
+                <select id="advDivisionFilter" class="form-control" style="width: auto;">
+                  <option value="">All Divisions</option>
+                </select>
+                <select id="advReportTypeFilter" class="form-control" style="width: auto;">
+                  <option value="">Any Report Type</option>
+                </select>
+              </div>
+            </form>
+          </div>
+
+          <div class="card-table">
+            <div class="table-controls">
+              <h3 style="font-size: 1rem; font-weight: 700;" id="searchResultsHeader">Search Results</h3>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Document</th>
+                  <th>Division</th>
+                  <th>Matched In</th>
+                  <th>Snippet / Context</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="searchResultsBody">
+                <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Enter a query above to search.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: ACCESS REQUESTS INBOX -->
+        <!-- ========================================== -->
+        <section id="viewRequests" class="view-panel" style="display: none;">
+          <div class="auth-tabs" style="max-width: 400px; margin-bottom: 1.5rem;">
+            <div class="auth-tab active" id="tabIncoming" onclick="switchRequestTab('incoming')">
+              Incoming Requests (<span id="incomingCount">0</span>)
+            </div>
+            <div class="auth-tab" id="tabOutgoing" onclick="switchRequestTab('outgoing')">
+              My Sent Requests (<span id="outgoingCount">0</span>)
+            </div>
+          </div>
+
+          <div class="card-table">
+            <table class="data-table">
+              <thead>
+                <tr id="requestsTableHeaders">
+                  <th>Document Title</th>
+                  <th>Requester</th>
+                  <th>Requester Division</th>
+                  <th>Document Division</th>
+                  <th>Status</th>
+                  <th>Submitted At</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="requestsTableBody">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: ADMIN / CUSTOM METADATA SETTINGS -->
+        <!-- ========================================== -->
+        <section id="viewAdmin" class="view-panel" style="display: none;">
+          <div class="table-controls" style="background: white; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid var(--border);">
+            <div>
+              <h3 style="font-size: 1.1rem; font-weight: 700;">Configurable Metadata Schema</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Define custom metadata fields (e.g. Report Type, Classification) tagged to documents</p>
+            </div>
+            <button class="btn btn-primary" onclick="openAddMetadataModal()">
+              <i class="fa-solid fa-plus"></i> Add New Field
+            </button>
+          </div>
+
+          <div class="card-table">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Field Name</th>
+                  <th>Field Type</th>
+                  <th>Dropdown Options</th>
+                  <th>Required</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="metadataTableBody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading metadata fields...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: UPLOAD DOCUMENT -->
+  <!-- ========================================== -->
+  <div id="uploadModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-cloud-arrow-up"></i> Upload Document</h3>
+        <button class="modal-close" onclick="closeModal('uploadModal')">&times;</button>
+      </div>
+      <form id="uploadDocForm" onsubmit="handleDocumentUpload(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Select File (PDF, PNG, JPG, JPEG &le; 10MB)</label>
+            <input type="file" id="uploadFile" class="form-control" accept=".pdf,.png,.jpg,.jpeg" required>
+          </div>
+          <div class="form-group">
+            <label>Document Title</label>
+            <input type="text" id="uploadTitle" class="form-control" placeholder="e.g. Q4 Financial Audit Report" required>
+          </div>
+          <div class="form-group">
+            <label>Assigned Division (Restricted to your division)</label>
+            <input type="text" id="uploadDivisionDisplay" class="form-control" readonly style="background: #f8fafc; font-weight: 600;">
+          </div>
+          
+          <hr style="border: none; border-top: 1px solid var(--border); margin: 1.5rem 0;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem;">
+            <i class="fa-solid fa-tags"></i> Dynamic Custom Metadata Fields
+          </h4>
+          <div id="dynamicFieldsContainer">
+            <!-- Dynamically populated from /api/metadata/active -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('uploadModal')">Cancel</button>
+          <button type="submit" id="btnUploadSubmit" class="btn btn-primary">
+            <i class="fa-solid fa-check"></i> Upload & Process OCR
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: DOCUMENT DETAILS, OCR & PREVIEW -->
+  <!-- ========================================== -->
+  <div id="docDetailsModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 id="modalDocTitle">Document Details</h3>
+        <button class="modal-close" onclick="closeModal('docDetailsModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="auth-tabs" style="margin-bottom: 1.25rem;">
+          <div class="auth-tab active" id="tabDocMeta" onclick="switchDocDetailTab('meta')">Metadata</div>
+          <div class="auth-tab" id="tabDocOcr" onclick="switchDocDetailTab('ocr')">OCR Extracted Text</div>
+          <div class="auth-tab" id="tabDocPreview" onclick="switchDocDetailTab('preview')">Live Preview</div>
+        </div>
+
+        <!-- TAB 1: METADATA -->
+        <div id="docDetailMetaSection">
+          <table class="data-table" style="margin-bottom: 1rem;">
+            <tbody id="docMetaAttributes">
+              <!-- Key/Value rows -->
+            </tbody>
+          </table>
+          <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem;">Custom Metadata Attributes</h4>
+          <div id="docCustomMetaList" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+        </div>
+
+        <!-- TAB 2: OCR TEXT -->
+        <div id="docDetailOcrSection" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-size: 0.85rem; color: var(--text-muted);" id="ocrStatusMsg">Extracted content:</span>
+            <button class="btn btn-secondary btn-sm" onclick="copyOcrText()"><i class="fa-regular fa-copy"></i> Copy Text</button>
+          </div>
+          <div id="docOcrContent" class="ocr-box">No text extracted.</div>
+        </div>
+
+        <!-- TAB 3: PREVIEW -->
+        <div id="docDetailPreviewSection" style="display: none;">
+          <iframe id="docPreviewFrame" class="preview-frame" src=""></iframe>
+        </div>
+      </div>
+      <div class="modal-footer" id="docDetailsFooter">
+        <!-- Download or Request Access buttons injected here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ADD DYNAMIC METADATA FIELD -->
+  <!-- ========================================== -->
+  <div id="addMetadataModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-plus-circle"></i> Add Custom Metadata Field</h3>
+        <button class="modal-close" onclick="closeModal('addMetadataModal')">&times;</button>
+      </div>
+      <form id="addMetadataForm" onsubmit="handleCreateMetadata(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Field Name (e.g., Report Type, Confidentiality)</label>
+            <input type="text" id="metaFieldName" class="form-control" placeholder="Report Type" required>
+          </div>
+          <div class="form-group">
+            <label>Field Type</label>
+            <select id="metaFieldType" class="form-control" onchange="toggleDropdownOptionsInput(this.value)" required>
+              <option value="text">Text Input</option>
+              <option value="number">Numeric</option>
+              <option value="date">Date</option>
+              <option value="dropdown">Dropdown Options</option>
+            </select>
+          </div>
+          <div class="form-group" id="metaOptionsGroup" style="display: none;">
+            <label>Dropdown Options (Comma-separated)</label>
+            <input type="text" id="metaOptionsInput" class="form-control" placeholder="Financial, Operational, Audit, Legal">
+          </div>
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" id="metaRequired" style="width: 18px; height: 18px;">
+            <label for="metaRequired" style="margin: 0; cursor: pointer;">Mandatory field for document uploads</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('addMetadataModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Field</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+# Environments & Dependencies
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Secrets & Local Configurations
+.env
+.env.local
+*.pem
+*.key
+
+# Temporary & Upload files
+uploads/*.pdf
+uploads/*.png
+uploads/*.jpg
+uploads/*.jpeg
+tests/*.pdf
+test_report.txt
+
+# OS Generated
+.DS_Store
+Thumbs.db
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
